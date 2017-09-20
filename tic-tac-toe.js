@@ -9,7 +9,7 @@ const rl = require('readline').createInterface({
     output: process.stdout
   })
 
-console.log('TIC-TAC-TOE\n\n')
+console.log('TIC-TAC-TOE')
 
 start()
 
