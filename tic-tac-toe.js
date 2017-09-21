@@ -1,16 +1,38 @@
 // TIC-TAC-TOE
 
 
+const reset = '\x1b[0m'
+const underscore = '\x1b[4m'
+const red = '\x1b[31m'
+const green = '\x1b[32m'
+const yellow = '\x1b[33m'
+const blue = '\x1b[34m'
+const magenta = '\x1b[35m'
+const cyan = '\x1b[36m'
+const white = '\x1b[37m'
+const bgWhite = '\x1b[47m'
+
+const logStyle = (...styles) => (content) => ([
+  console.log([...styles, content, reset].join(''))
+])
+
 
 // IO
+
+const logGreen = logStyle(green)
+const logMagenta = logStyle(magenta)
+const logTurn = logStyle(underscore, yellow)
+const logError = logStyle(red)
+const logWinner = logStyle(bgWhite, magenta)
+const linebreak = () => console.log('')
 
 const rl = require('readline').createInterface({
     input: process.stdin,
     output: process.stdout
   })
 
-console.log('TIC-TAC-TOE')
-
+logGreen('TIC-TAC-TOE')
+linebreak()
 start()
 
 function start() {
@@ -21,12 +43,14 @@ function start() {
 
 function getBoardSize() {
   return new Promise((resolve) => {
-    rl.question('\nWhat size board would you like to play with?\n', (answer) => {
+    logGreen('What size board would you like to play with?')
+    rl.question('', (answer) => {
       const size = parseInt(answer, 10)
       if (!isNaN(size) && size == answer && size > 0) {
         resolve(size)
       } else {
-        console.log('\nPlease enter a positive integer.\n')
+        linebreak()
+        logError('Please enter a positive integer.')
         resolve(getBoardSize())
       }
     })
@@ -35,47 +59,71 @@ function getBoardSize() {
 
 function play(model) {
   return new Promise((resolve) => {
-    console.log(`\n${model.player}'s turn`)
+    linebreak()
+    drawBoard(model.board)
+    linebreak()
+    logTurn(`${model.player}'s turn`)
+    linebreak()
+    console.log('Pick a square (ex: \'1, 2\')')
 
-    rl.question(`\nPick your x coordinate (1 - ${model.board.length})\n`, x => {
-      rl.question(`\nPick your y coordinate (1 - ${model.board.length})\n`, y => {
+    rl.question('', input => {
+      const nextModel = updateModel(processInput(input), model)
+      linebreak()
 
-        const nextModel = updateModel([x, y], model)
+      if (nextModel.winner || nextModel.stalemate) {
         drawBoard(nextModel.board)
+        resolve(nextModel)
+      } else {
+        if (nextModel.error) logError(nextModel.error)
+        resolve(play(nextModel))
+      }
 
-        if (nextModel.winner || nextModel.stalemate) {
-          resolve(nextModel)
-        } else {
-          if (nextModel.error) console.log('\n' + nextModel.error)
-          resolve(play(nextModel))
-        }
-
-      })
     })
 
   })
 }
 
-function drawBoard(board) {
-  '\n' + board.forEach(row => console.log(row.join(' ')))
-}
 
 function restartOrExit({ winner, stalemate }) {
   return new Promise(resolve => {
-    if (winner) console.log(`\n${winner} wins!\n`)
-    else console.log('\nStalemate! Nobody wins!\n')
-
-    rl.question('Would you like to play again?\n', (answer) => {
+    linebreak()
+    if (winner) logWinner(`${winner} wins!`)
+    else logMagenta('Stalemate! Nobody wins!')
+    linebreak()
+    logGreen('Would you like to play again?')
+    rl.question('', (answer) => {
       if (['', 'y', 'yes', 'sure', '1'].includes(answer.toLowerCase())) {
         resolve(start())
       } else {
-        console.log('\nGoodbye!\n')
+        linebreak()
+        logGreen('Goodbye!')
         rl.close()
         resolve()
       }
     })
 
   })
+}
+
+function processInput(input) {
+  return input
+    .split(/[,\s]+/)
+    .map(v => v.replace(/\s*/, ''))
+    .map(v => /\D/.test(v) ? '' : v)
+}
+
+function drawBoard(board) {
+  board
+    .map(row =>
+      row.map(v => {
+        switch (true) {
+          case v === 'X': return cyan + v + reset
+          case v === 'O': return yellow + v + reset
+          default: return v
+        }
+      })
+    )
+    .forEach(row => console.log(row.join(' ')))
 }
 
 
@@ -102,7 +150,7 @@ function initScore(n) {
 }
 
 function initBoard(n) {
-  return new Array(n).fill(new Array(n).fill('_'))
+  return new Array(n).fill(new Array(n).fill('·'))
 }
 
 
@@ -212,13 +260,13 @@ function onBoard(x, n) {
 }
 
 function alreadyGuessed([x, y], board) {
-  return board[board.length - y][x - 1] !== '_'
+  return board[board.length - y][x - 1] !== '·'
 }
 
 // Stalemate
 
 function updateStalemate(board) {
   return board.reduce((acc1, row) =>
-    row.reduce((acc2, square) => square !== '_' && acc2, true) && acc1
+    row.reduce((acc2, square) => square !== '·' && acc2, true) && acc1
   , true)
 }
