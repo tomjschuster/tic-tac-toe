@@ -17,14 +17,16 @@ const logStyle = (...styles) => (content) => ([
 ])
 
 
-// IO
-
 const logGreen = logStyle(green)
 const logMagenta = logStyle(magenta)
 const logTurn = logStyle(underscore, yellow)
 const logError = logStyle(red)
 const logWinner = logStyle(bgWhite, magenta)
 const linebreak = () => console.log('')
+
+
+
+// IO
 
 const rl = require('readline').createInterface({
     input: process.stdin,
